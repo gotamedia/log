@@ -1,0 +1,22 @@
+{
+    "name": "atom/log",
+    "description": "An implementation of PSR-3.",
+    "homepage": "https://bitbucket.org/gotamedia/log",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Peter Pettersson",
+            "email": "peter.pettersson@gotamedia.se"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Atom\\Log\\": "src"
+        }
+    },
+    "require": {
+        "php": "~7.1.0",
+        "psr/log": "~1.0.0"
+    }
+}
