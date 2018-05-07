@@ -1,10 +1,4 @@
-<p align="center">
-    <a href="https://bitbucket.org/account/user/gotamedia/projects/ATOM">
-        <img src="https://i.imgur.com/2fV9p91.png" height="102">
-    </a>
-</p>
-
-# atoms/log
+![atoms/log](https://i.imgur.com/2fV9p91.png)
 
 With this implementation of the [PSR-3](https://www.php-fig.org/psr/psr-3/) standard, you can write your logs to files or databases or send them to third party apps, like [Slack](https://slack.com/), or other web services. Extendable by the use of custom handlers.
 
