@@ -1,6 +1,6 @@
 <?php
 
-namespace Atom\Log\Handlers;
+namespace Atoms\Log\Handlers;
 
 interface HandlerInterface
 {

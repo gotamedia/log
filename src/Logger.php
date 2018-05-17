@@ -1,9 +1,9 @@
 <?php
 
-namespace Atom\Log;
+namespace Atoms\Log;
 
-use Atom\Log\Handlers\HandlerInterface;
-use Atom\Log\Handlers\StreamHandler;
+use Atoms\Log\Handlers\HandlerInterface;
+use Atoms\Log\Handlers\StreamHandler;
 use InvalidArgumentException;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
@@ -12,7 +12,7 @@ use RuntimeException;
 class Logger extends AbstractLogger
 {
     /**
-     * @var \Atom\Log\Handlers\HandlerInterface[] All registered handlers.
+     * @var \Atoms\Log\Handlers\HandlerInterface[] All registered handlers.
      */
     protected $handlers;
 
@@ -43,7 +43,7 @@ class Logger extends AbstractLogger
         foreach ($handlers as $handler) {
             if (!$handler instanceof HandlerInterface) {
                 throw new InvalidArgumentException(
-                    'Invalid log handler; must be an instance of \Atom\Log\Handlers\HandlerInterface'
+                    'Invalid log handler; must be an instance of \Atoms\Log\Handlers\HandlerInterface'
                 );
             }
         }
@@ -54,7 +54,7 @@ class Logger extends AbstractLogger
     /**
      * Returns a list of all handlers.
      *
-     * @return \Atom\Log\Handlers\HandlerInterface[]
+     * @return \Atoms\Log\Handlers\HandlerInterface[]
      */
     public function getHandlers(): array
     {
@@ -64,7 +64,7 @@ class Logger extends AbstractLogger
     /**
      * Adds a handler to the list.
      *
-     * @param \Atom\Log\Handlers\HandlerInterface $handler
+     * @param \Atoms\Log\Handlers\HandlerInterface $handler
      */
     public function addHandler(HandlerInterface $handler): void
     {

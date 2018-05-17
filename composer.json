@@ -1,5 +1,5 @@
 {
-    "name": "atom/log",
+    "name": "atoms/log",
     "description": "An implementation of PSR-3.",
     "homepage": "https://bitbucket.org/gotamedia/log",
     "type": "library",
@@ -12,7 +12,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Atom\\Log\\": "src"
+            "Atoms\\Log\\": "src"
         }
     },
     "require": {

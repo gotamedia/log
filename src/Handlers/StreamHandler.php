@@ -1,6 +1,6 @@
 <?php
 
-namespace Atom\Log\Handlers;
+namespace Atoms\Log\Handlers;
 
 use InvalidArgumentException;
 use Psr\Log\LogLevel;

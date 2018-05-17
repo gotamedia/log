@@ -1,8 +1,8 @@
 <?php
 
-namespace Atom\Log\Handlers;
+namespace Atoms\Log\Handlers;
 
-use Atom\Log\Logger;
+use Atoms\Log\Logger;
 use InvalidArgumentException;
 use Psr\Log\LogLevel;
 use ReflectionClass;
