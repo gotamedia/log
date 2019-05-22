@@ -1,7 +1,10 @@
 <?php
 
-namespace Atoms\Log\Handlers;
+declare(strict_types=1);
 
+namespace Atoms\Log\Handler;
+
+use Atoms\Log\Record;
 use InvalidArgumentException;
 use Psr\Log\LogLevel;
 
@@ -34,16 +37,14 @@ class StreamHandler extends AbstractHandler
     /**
      * Handles the log message.
      *
-     * @param string $level
-     * @param mixed $message
-     * @param array $context
+     * @param \Atoms\Log\Record $record
      */
-    public function handle($level, $message, array $context = [])
+    public function handle(Record $record)
     {
         $date = $this->formatDate();
-        $level = $this->formatLevel($level);
+        $level = $this->formatLevel($record->getLevel());
 
-        fwrite($this->resource, "[{$date}] {$level}: " . $this->formatMessage($message) . PHP_EOL);
+        fwrite($this->resource, "[{$date}] {$level}: " . $this->formatMessage($record->getMessage()) . PHP_EOL);
     }
 
     /**

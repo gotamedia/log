@@ -1,7 +1,10 @@
 <?php
 
-namespace Atoms\Log\Handlers;
+declare(strict_types=1);
 
+namespace Atoms\Log\Handler;
+
+use Atoms\Log\Formatter\FormatterInterface;
 use Atoms\Log\Logger;
 use InvalidArgumentException;
 use Psr\Log\LogLevel;
@@ -17,9 +20,15 @@ abstract class AbstractHandler implements HandlerInterface
     protected $level;
 
     /**
-     * @param string $level
+     * @var \Atoms\Log\Formatter\FormatterInterface|null
      */
-    public function __construct($level = LogLevel::DEBUG)
+    protected $formatter;
+
+    /**
+     * @param string $level
+     * @param \Atoms\Log\Formatter\FormatterInterface|null $formatter
+     */
+    public function __construct($level = LogLevel::DEBUG, ?FormatterInterface $formatter = null)
     {
         /** If the log level is undefined; use the default one */
         if (!defined(LogLevel::class . '::' . strtoupper($level))) {
@@ -30,6 +39,7 @@ abstract class AbstractHandler implements HandlerInterface
         }
 
         $this->level = $level;
+        $this->formatter = $formatter;
     }
 
     /**
