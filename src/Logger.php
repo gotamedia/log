@@ -59,14 +59,6 @@ class Logger extends AbstractLogger
      */
     public function log($level, $message, array $context = []): void
     {
-        /** Add a basic log handler if none has been defined */
-        if (count($this->handlers) === 0) {
-            $this->addHandler(new Handler\Stream(
-                fopen('php://stdout', 'a'),
-                new Formatter\Line()
-            ));
-        }
-
         foreach ($this->handlers as $handler) {
             if ($handler->isHandling($level)) {
                 try {
