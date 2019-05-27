@@ -35,11 +35,11 @@ class Stream extends AbstractHandler
     /**
      * {@inheritDoc}
      */
-    public function write(RecordInterface $record): void
+    public function handle(RecordInterface $record): void
     {
-        $formattedMessage = is_null($this->formatter)
-            ? (new Formatter\Line())->format($record)
-            : $this->formatter->format($record);
+        $formattedMessage = is_null($this->formatter) ?
+            (new Formatter\Line())->format($record) :
+            $this->formatter->format($record);
 
         fwrite($this->resource, $formattedMessage . PHP_EOL);
     }

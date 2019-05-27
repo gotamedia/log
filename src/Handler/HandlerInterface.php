@@ -28,5 +28,5 @@ interface HandlerInterface
      *
      * @param \Atoms\Log\RecordInterface $record
      */
-    public function handle(RecordInterface $record);
+    public function handle(RecordInterface $record): void;
 }

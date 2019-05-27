@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atoms\Log\Handler;
 
 use Atoms\Log\Logger;
-use Atoms\Log\RecordInterface;
 use InvalidArgumentException;
 use Psr\Log\LogLevel;
 use ReflectionClass;
@@ -32,20 +31,9 @@ abstract class AbstractHandler implements HandlerInterface
      */
     public function isHandling(string $level): bool
     {
-        return $this->bubble
-            ? $this->logLevelSeverity($level) <= $this->logLevelSeverity($this->level)
-            : $this->logLevelSeverity($level) === $this->logLevelSeverity($this->level);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function handle(RecordInterface $record)
-    {
-        /** @todo Check for formatters? */
-//        if ($this->isHandling($record->getLevel())) {
-            $this->write($record);
-//        }
+        return $this->bubble ?
+            $this->logLevelSeverity($level) <= $this->logLevelSeverity($this->level) :
+            $this->logLevelSeverity($level) === $this->logLevelSeverity($this->level);
     }
 
     /**
@@ -97,11 +85,4 @@ abstract class AbstractHandler implements HandlerInterface
     {
         return (new ReflectionClass(LogLevel::class))->getConstants();
     }
-
-    /**
-     * [abstract description]
-     *
-     * @var \Atoms\Log\RecordInterface $record
-     */
-    abstract public function write(RecordInterface $record): void;
 }
