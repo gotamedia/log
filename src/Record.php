@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Atoms\Log;
 
-use DateTime;
+use DateTimeImmutable;
+use DateTimeInterface;
 
-class Record
+class Record implements RecordInterface
 {
     /**
      * @var string
@@ -24,7 +25,7 @@ class Record
     private $context;
 
     /**
-     * @var \DateTime
+     * @var \DateTimeInterface
      */
     private $dateTime;
 
@@ -34,20 +35,18 @@ class Record
      * @param string $level
      * @param string $message
      * @param array $context
-     * @param \DateTime|null $dateTime
+     * @param \DateTimeInterface|null $dateTime
      */
-    public function __construct(string $level, string $message, array $context = [], ?DateTime $dateTime = null)
+    public function __construct(string $level, string $message, array $context = [], DateTimeInterface $dateTime = null)
     {
         $this->level = $level;
         $this->message = $message;
         $this->context = $context;
-        $this->dateTime = $dateTime ?? new DateTime();
+        $this->dateTime = $dateTime ?? new DateTimeImmutable();
     }
 
     /**
-     * Returns the record level.
-     *
-     * @return string
+     * {@inheritDoc}
      */
     public function getLevel(): string
     {
@@ -55,9 +54,7 @@ class Record
     }
 
     /**
-     * Returns the record message.
-     *
-     * @return string
+     * {@inheritDoc}
      */
     public function getMessage(): string
     {
@@ -65,9 +62,7 @@ class Record
     }
 
     /**
-     * Returns the record context.
-     *
-     * @return array
+     * {@inheritDoc}
      */
     public function getContext(): array
     {
@@ -75,11 +70,9 @@ class Record
     }
 
     /**
-     * Returns the record timestamp.
-     *
-     * @return \DateTime
+     * {@inheritDoc}
      */
-    public function getDateTime(): DateTime
+    public function getDateTimeInterface(): DateTimeInterface
     {
         return $this->dateTime;
     }
