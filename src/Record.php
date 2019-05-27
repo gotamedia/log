@@ -72,7 +72,7 @@ class Record implements RecordInterface
     /**
      * {@inheritDoc}
      */
-    public function getDateTimeInterface(): DateTimeInterface
+    public function getDateTime(): DateTimeInterface
     {
         return $this->dateTime;
     }

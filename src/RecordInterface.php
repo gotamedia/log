@@ -34,5 +34,5 @@ interface RecordInterface
      *
      * @return \DateTimeInterface
      */
-    public function getDateTimeInterface(): DateTimeInterface;
+    public function getDateTime(): DateTimeInterface;
 }

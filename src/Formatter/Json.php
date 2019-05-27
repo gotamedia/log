@@ -27,7 +27,7 @@ class Json implements FormatterInterface
             'message' => $record->getMessage(),
             'context' => $record->getContext(),
             'level' => $record->getLevel(),
-            'datetime' => $record->getDateTimeInterface()->format('c')
+            'datetime' => $record->getDateTime()->format('c')
         ], $this->encodingOptions);
 
         if ($string === false) {
