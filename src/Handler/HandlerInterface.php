@@ -1,16 +1,20 @@
 <?php
 
-namespace Atoms\Log\Handlers;
+declare(strict_types=1);
+
+namespace Atoms\Log\Handler;
+
+use Atoms\Log\RecordInterface;
 
 interface HandlerInterface
 {
     /**
      * Checks if the handler will handle a log record of given log level.
      *
-     * @param  string $level
+     * @param string $level
      * @return bool
      */
-    public function isHandling($level);
+    public function isHandling(string $level): bool;
 
     /**
      * Handles a log record.
@@ -22,9 +26,7 @@ interface HandlerInterface
      * stack. Unless the bubbling is interrupted (by returning true), the Logger class
      * will keep on calling further handlers in the stack with a given log record.
      *
-     * @param string $level
-     * @param mixed $message
-     * @param array $context
+     * @param \Atoms\Log\RecordInterface $record
      */
-    public function handle($level, $message, array $context = []);
+    public function handle(RecordInterface $record): void;
 }

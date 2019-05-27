@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atoms\Log;
 
-use Atoms\Log\Handlers\HandlerInterface;
-use Atoms\Log\Handlers\StreamHandler;
+use Atoms\Log\Formatter;
+use Atoms\Log\Handler;
+use Atoms\Log\Handler\HandlerInterface;
 use InvalidArgumentException;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
@@ -12,7 +15,7 @@ use RuntimeException;
 class Logger extends AbstractLogger
 {
     /**
-     * @var \Atoms\Log\Handlers\HandlerInterface[] All registered handlers.
+     * @var \Atoms\Log\Handler\HandlerInterface[]
      */
     protected $handlers;
 
@@ -36,14 +39,14 @@ class Logger extends AbstractLogger
     /**
      * Creates a new Logger instance.
      *
-     * @param array $handlers
+     * @param \Atoms\Log\Handler\HandlerInterface[] $handlers
      */
     public function __construct(array $handlers = [])
     {
         foreach ($handlers as $handler) {
             if (!$handler instanceof HandlerInterface) {
                 throw new InvalidArgumentException(
-                    'Invalid log handler; must be an instance of \Atoms\Log\Handlers\HandlerInterface'
+                    'Invalid log handler; must be an instance of \Atoms\Log\Handler\HandlerInterface'
                 );
             }
         }
@@ -52,9 +55,25 @@ class Logger extends AbstractLogger
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function log($level, $message, array $context = []): void
+    {
+        foreach ($this->handlers as $handler) {
+            if ($handler->isHandling($level)) {
+                try {
+                    $handler->handle(new Record($level, $message, $context));
+                } catch (RuntimeException $exception) {
+                    error_log($exception->getMessage());
+                }
+            }
+        }
+    }
+
+    /**
      * Returns a list of all handlers.
      *
-     * @return \Atoms\Log\Handlers\HandlerInterface[]
+     * @return \Atoms\Log\Handler\HandlerInterface[]
      */
     public function getHandlers(): array
     {
@@ -64,31 +83,10 @@ class Logger extends AbstractLogger
     /**
      * Adds a handler to the list.
      *
-     * @param \Atoms\Log\Handlers\HandlerInterface $handler
+     * @param \Atoms\Log\Handler\HandlerInterface $handler
      */
     public function addHandler(HandlerInterface $handler): void
     {
         array_unshift($this->handlers, $handler);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function log($level, $message, array $context = []): void
-    {
-        /** Add a basic log handler if none has been defined */
-        if (count($this->handlers) == 0) {
-            $this->addHandler(new StreamHandler(fopen('php://stderr', 'a'), LogLevel::DEBUG));
-        }
-
-        foreach ($this->handlers as $handler) {
-            if ($handler->isHandling($level)) {
-                try {
-                    $handler->handle($level, $message, $context);
-                } catch (RuntimeException $e) {
-                    error_log($e->getMessage());
-                }
-            }
-        }
     }
 }
