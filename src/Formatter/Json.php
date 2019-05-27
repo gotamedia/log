@@ -4,30 +4,37 @@ declare(strict_types=1);
 
 namespace Atoms\Log\Formatter;
 
-use Atoms\Log\Record;
+use Atoms\Log\RecordInterface;
+use RuntimeException;
 
 class Json implements FormatterInterface
 {
     /**
      * @var int
      */
-    private $encodingOptions = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION;
+    private $encodingOptions =
+        JSON_UNESCAPED_SLASHES |
+        JSON_UNESCAPED_UNICODE |
+        JSON_PRESERVE_ZERO_FRACTION |
+        JSON_PRETTY_PRINT;
 
     /**
      * {@inheritDoc}
      */
-    public function format(Record $record): string
+    public function format(RecordInterface $record): string
     {
-        $defaultValues = [
-            'level' => $record->getLevel(),
+        $string = json_encode([
             'message' => $record->getMessage(),
-            'dateTime' => $record->getDateTime()->format('c')
-        ];
+            'context' => $record->getContext(),
+            'level' => $record->getLevel(),
+            'datetime' => $record->getDateTimeInterface()->format('c')
+        ], $this->encodingOptions);
 
-        return json_encode(
-            array_merge($defaultValues, $record->getContext()),
-            $this->encodingOptions
-        );
+        if ($string === false) {
+            throw new RuntimeException('Could not encode JSON: ' . json_last_error_msg());
+        }
+
+        return $string;
     }
 
     /**
