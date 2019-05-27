@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Atoms\Log\Handler;
 
-use Atoms\Log\Formatter\FormatterInterface;
 use Atoms\Log\Logger;
+use Atoms\Log\RecordInterface;
 use InvalidArgumentException;
 use Psr\Log\LogLevel;
 use ReflectionClass;
@@ -13,11 +13,14 @@ use ReflectionClass;
 abstract class AbstractHandler implements HandlerInterface
 {
     /**
-     * The minimum logging level at which the handler will be triggered.
-     *
      * @var string
      */
-    protected $level;
+    protected $level = LogLevel::DEBUG;
+
+    /**
+     * @var bool
+     */
+    protected $bubble = true;
 
     /**
      * @var \Atoms\Log\Formatter\FormatterInterface|null
@@ -25,39 +28,80 @@ abstract class AbstractHandler implements HandlerInterface
     protected $formatter;
 
     /**
-     * @param string $level
-     * @param \Atoms\Log\Formatter\FormatterInterface|null $formatter
+     * {@inheritDoc}
      */
-    public function __construct($level = LogLevel::DEBUG, ?FormatterInterface $formatter = null)
+    public function isHandling(string $level): bool
     {
-        /** If the log level is undefined; use the default one */
-        if (!defined(LogLevel::class . '::' . strtoupper($level))) {
-            throw new InvalidArgumentException(
-                'Invalid log level; must be one of ' .
-                implode(', ', (new ReflectionClass(LogLevel::class))->getConstants())
-            );
-        }
-
-        $this->level = $level;
-        $this->formatter = $formatter;
+        return $this->bubble
+            ? $this->logLevelSeverity($level) <= $this->logLevelSeverity($this->level)
+            : $this->logLevelSeverity($level) === $this->logLevelSeverity($this->level);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function isHandling($level): bool
+    public function handle(RecordInterface $record)
     {
-        return $this->logLevelImportance($level) <= $this->logLevelImportance($this->level);
+        /** @todo Check for formatters? */
+//        if ($this->isHandling($record->getLevel())) {
+            $this->write($record);
+//        }
     }
 
     /**
-     * Gets a numerical value of the log level. Lower value = higher importance.
+     * Set the log level.
      *
-     * @param  string $level
+     * @param string $level
+     * @throws \InvalidArgumentException
+     */
+    public function setLevel(string $level): void
+    {
+        /** Check if the provided log level is a valid level */
+        if (!defined(LogLevel::class . '::' . strtoupper($level))) {
+            throw new InvalidArgumentException(
+                'Invalid log level; must be one of ' .
+                implode(', ', $this->getAllLevels())
+            );
+        }
+
+        $this->level = $level;
+    }
+
+    /**
+     * Sets the behavior of bubbling.
+     *
+     * @param bool $bubble
+     */
+    public function setBubble(bool $bubble): void
+    {
+        $this->bubble = $bubble;
+    }
+
+    /**
+     * Gets a numerical value of the log level. Lower value = more severe.
+     *
+     * @param string $level
      * @return int
      */
-    private function logLevelImportance($level)
+    private function logLevelSeverity(string $level): int
     {
         return array_search($level, Logger::$levels);
     }
+
+    /**
+     * Returns all valid log levels.
+     *
+     * @return array
+     */
+    private function getAllLevels(): array
+    {
+        return (new ReflectionClass(LogLevel::class))->getConstants();
+    }
+
+    /**
+     * [abstract description]
+     *
+     * @var \Atoms\Log\RecordInterface $record
+     */
+    abstract public function write(RecordInterface $record): void;
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atoms\Log\Handler;
 
-use Atoms\Log\Record;
+use Atoms\Log\RecordInterface;
 
 interface HandlerInterface
 {
@@ -14,7 +14,7 @@ interface HandlerInterface
      * @param string $level
      * @return bool
      */
-    public function isHandling($level): bool;
+    public function isHandling(string $level): bool;
 
     /**
      * Handles a log record.
@@ -26,7 +26,7 @@ interface HandlerInterface
      * stack. Unless the bubbling is interrupted (by returning true), the Logger class
      * will keep on calling further handlers in the stack with a given log record.
      *
-     * @param \Atoms\Log\Record $record
+     * @param \Atoms\Log\RecordInterface $record
      */
-    public function handle(Record $record);
+    public function handle(RecordInterface $record);
 }
