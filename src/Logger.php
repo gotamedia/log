@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Atoms\Log;
 
+use Atoms\Log\Formatter;
+use Atoms\Log\Handler;
 use Atoms\Log\Handler\HandlerInterface;
-use Atoms\Log\Handler\StreamHandler;
 use InvalidArgumentException;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
@@ -54,6 +55,30 @@ class Logger extends AbstractLogger
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function log($level, $message, array $context = []): void
+    {
+        /** Add a basic log handler if none has been defined */
+        if (count($this->handlers) === 0) {
+            $this->addHandler(new Handler\Stream(
+                fopen('php://stdout', 'a'),
+                new Formatter\Line()
+            ));
+        }
+
+        foreach ($this->handlers as $handler) {
+            if ($handler->isHandling($level)) {
+                try {
+                    $handler->handle(new Record($level, $message, $context));
+                } catch (RuntimeException $exception) {
+                    error_log($exception->getMessage());
+                }
+            }
+        }
+    }
+
+    /**
      * Returns a list of all handlers.
      *
      * @return \Atoms\Log\Handler\HandlerInterface[]
@@ -71,26 +96,5 @@ class Logger extends AbstractLogger
     public function addHandler(HandlerInterface $handler): void
     {
         array_unshift($this->handlers, $handler);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function log($level, $message, array $context = []): void
-    {
-        /** Add a basic log handler if none has been defined */
-        if (count($this->handlers) === 0) {
-            $this->addHandler(new StreamHandler(fopen('php://stdout', 'a'), LogLevel::DEBUG));
-        }
-
-        foreach ($this->handlers as $handler) {
-            if ($handler->isHandling($level)) {
-                try {
-                    $handler->handle(new Record($level, $message, $context));
-                } catch (RuntimeException $exception) {
-                    error_log($exception->getMessage());
-                }
-            }
-        }
     }
 }
