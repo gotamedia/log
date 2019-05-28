@@ -10,13 +10,13 @@ use RuntimeException;
 class Json implements FormatterInterface
 {
     /**
+     * @todo Add option to enable JSON_PRETTY_PRINT
      * @var int
      */
     private $encodingOptions =
         JSON_UNESCAPED_SLASHES |
         JSON_UNESCAPED_UNICODE |
-        JSON_PRESERVE_ZERO_FRACTION |
-        JSON_PRETTY_PRINT;
+        JSON_PRESERVE_ZERO_FRACTION;
 
     /**
      * {@inheritDoc}
