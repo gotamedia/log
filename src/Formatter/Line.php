@@ -15,7 +15,7 @@ class Line implements FormatterInterface
     {
         $string = sprintf(
             '%s [%s] %s',
-            $record->getDateTimeInterface()->format('c'),
+            $record->getDateTime()->format('c'),
             strtoupper($record->getLevel()),
             $record->getMessage()
         );

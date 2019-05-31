@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#===================================================================================
+#
+#         FILE: build
+#
+#  DESCRIPTION: Builds the application, producing a docker image.
+#
+#      OPTIONS: ---
+# REQUIREMENTS: IMAGE_NAME, BITBUCKET_USERNAME, BITBUCKET_PASSWORD
+#         BUGS: ---
+#        NOTES: ---
+#       AUTHOR: Gota Media
+#      COMPANY: Gota Media AB
+#      VERSION: 0.1.0
+#      CREATED: 2019-02-14
+#===================================================================================
+
+set -e
+
+source ci/functions.sh
+
+assert-variables IMAGE_NAME \
+                 BITBUCKET_USERNAME \
+                 BITBUCKET_PASSWORD
+
+VERSION=$(echo ${BITBUCKET_TAG:-${BITBUCKET_BRANCH}.${BITBUCKET_BUILD_NUMBER}} | tr "/[:upper:]" "_[:lower:]")
+
+docker build --tag ${IMAGE_NAME}:${VERSION} \
+             --build-arg bitbucket_username=${BITBUCKET_USERNAME} \
+             --build-arg bitbucket_password=${BITBUCKET_PASSWORD} \
+             .
+docker save --output link.tar ${IMAGE_NAME}:${VERSION}

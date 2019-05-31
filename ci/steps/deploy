@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+#===================================================================================
+#
+#         FILE: deploy
+#
+#  DESCRIPTION: Deploys the application to the AWS cloud.
+#
+#      OPTIONS: ---
+# REQUIREMENTS: IMAGE_NAME, SERVICE_HOST, LISTENER_SCHEME, AWS_ACCESS_KEY_ID,
+#               AWS_SECRET_ACCESS_KEY, APP_ID, COST_BEARER, COST_CENTER, OWNER,
+#               ROLE, SLA
+#         BUGS: ---
+#        NOTES: ---
+#       AUTHOR: Gota Media
+#      COMPANY: Gota Media AB
+#      VERSION: 0.1.0
+#      CREATED: 2019-02-14
+#===================================================================================
+
+set -e
+
+source ci/functions.sh
+
+assert-variables IMAGE_NAME \
+                 SERVICE_HOST \
+                 LISTENER_SCHEME \
+                 AWS_ACCESS_KEY_ID \
+                 AWS_SECRET_ACCESS_KEY \
+                 APP_ID \
+                 COST_BEARER \
+                 COST_CENTER \
+                 OWNER \
+                 ROLE \
+                 SLA
+
+export AWS_DEFAULT_OUTPUT=text
+
+STACK_ENVIRONMENT=OTHER
+
+case $(get-build-environment) in
+  "test") STACK_ENVIRONMENT=UAT ;;
+  "prod") STACK_ENVIRONMENT=PROD ;;
+esac
+
+LISTENER_PRIORITY=$(aws cloudformation describe-stacks --stack-name ${IMAGE_NAME}-tg | grep ListenerPriority | cut -f 3)
+
+if [ -z "${LISTENER_PRIORITY}" ]
+then
+    LISTENER_NAME=AlbPublicListener80
+
+    if [ "${LISTENER_SCHEME}" = "HTTPS" ] || [ "${LISTENER_SCHEME}" = "BOTH" ]
+    then
+        LISTENER_NAME=AlbPublicListener443
+    fi
+
+    LISTENER=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-alb-${LISTENER_NAME}'].Value");
+    LISTENER_PRIORITY=$(($(aws elbv2 describe-rules --listener-arn ${LISTENER} | grep -i rules | cut -f 3 | grep [0-9] | sort -nr | head -n 1) + 1))
+fi
+
+aws cloudformation deploy --template-file ci/templates/targetgroup.template \
+                          --stack-name ${IMAGE_NAME}-tg \
+                          --capabilities CAPABILITY_IAM \
+                          --tags \
+                          AppId="${APP_ID}" \
+                          AppName="${BITBUCKET_REPO_SLUG}" \
+                          CostBearer="${COST_BEARER}" \
+                          CostCenter="${COST_CENTER}" \
+                          Environment="$(get-build-environment)" \
+                          Owner="${OWNER}" \
+                          Role="${ROLE}" \
+                          SLA="${SLA}" \
+                          --parameter-overrides \
+                          HealthCheckPath=${HEALTH_CHECK_PATH:-NONE} \
+                          HealthCheckStatusCodes=${HEALTH_CHECK_STATUS_CODES:-204} \
+                          AutoscalingMin=${AUTOSCALING_MIN:-1} \
+                          AutoscalingMax=${AUTOSCALING_MAX:-1} \
+                          ListenerPriority=${LISTENER_PRIORITY} \
+                          ListenerScheme=${LISTENER_SCHEME} \
+                          ContainerName=${IMAGE_NAME} \
+                          AlbStack=aws-infrastructure-$(get-build-environment)-alb \
+                          EcsStack=aws-infrastructure-$(get-build-environment)-cluster \
+                          NetworkStack=aws-infrastructure-$(get-build-environment)-vpc \
+                          EncryptLambdaStack=aws-infrastructure-$(get-build-environment)-encrypt \
+                          DatadogStack=aws-infrastructure-$(get-build-environment)-datadog \
+                          StackEnv=${STACK_ENVIRONMENT} \
+                          TaskDefinition=$(cat link.arn) \
+                          ServiceHost=${SERVICE_HOST}
+
+CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-cluster-Cluster'].Value")
+TARGET_GROUP_SERVICE=$(aws ecs list-services --cluster ${CLUSTER} | grep /${IMAGE_NAME}-tg-Service | cut -f 2)
+TASK=$(aws ecs list-tasks --cluster ${CLUSTER} --family ${IMAGE_NAME} | cut -f 2)
+
+aws ecs tag-resource --resource-arn ${TARGET_GROUP_SERVICE} \
+                     --tags \
+                    key=AppId,value="${APP_ID}" \
+                    key=AppName,value="${BITBUCKET_REPO_SLUG}" \
+                    key=Environment,value="$(get-build-environment)" \
+                    key=CostBearer,value="${COST_BEARER}" \
+                    key=CostCenter,value="${COST_CENTER}" \
+                    key=Owner,value="${OWNER}" \
+                    key=Role,value="${ROLE}" \
+                    key=SLA,value="${SLA}"
+aws ecs tag-resource --resource-arn ${TASK} \
+                     --tags \
+                    key=AppId,value="${APP_ID}" \
+                    key=AppName,value="${BITBUCKET_REPO_SLUG}" \
+                    key=Environment,value="$(get-build-environment)" \
+                    key=CostBearer,value="${COST_BEARER}" \
+                    key=CostCenter,value="${COST_CENTER}" \
+                    key=Owner,value="${OWNER}" \
+                    key=Role,value="${ROLE}" \
+                    key=SLA,value="${SLA}"

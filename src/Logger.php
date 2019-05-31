@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Atoms\Log;
 
-use Atoms\Log\Formatter;
-use Atoms\Log\Handler;
 use Atoms\Log\Handler\HandlerInterface;
 use InvalidArgumentException;
 use Psr\Log\AbstractLogger;

@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+#===================================================================================
+#
+#         FILE: publish
+#
+#  DESCRIPTION: Publishes any artifacts to the AWS cloud.
+#
+#      OPTIONS: ---
+# REQUIREMENTS: IMAGE_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, APP_ID, ROLE,
+#               ECR_LIFECYCLE_COUNT, COST_BEARER, COST_CENTER, OWNER, SLA
+#         BUGS: ---
+#        NOTES: ---
+#       AUTHOR: Gota Media
+#      COMPANY: Gota Media AB
+#      VERSION: 0.1.0
+#      CREATED: 2019-02-14
+#===================================================================================
+
+set -e
+
+source ci/functions.sh
+
+assert-variables IMAGE_NAME \
+                 AWS_ACCESS_KEY_ID \
+                 AWS_SECRET_ACCESS_KEY \
+                 ECR_LIFECYCLE_COUNT \
+                 APP_ID \
+                 COST_BEARER \
+                 COST_CENTER \
+                 OWNER \
+                 ROLE \
+                 SLA
+
+$(aws ecr get-login --no-include-email)
+
+docker load --input link.tar
+
+export AWS_DEFAULT_OUTPUT=text
+
+VERSION=$(docker images | grep "^${IMAGE_NAME}\s" | tr -s " " | cut -d " " -f 2)
+REPOSITORY=$(aws ecr describe-repositories --repository-name ${IMAGE_NAME} --output json 2> /dev/null | jq -r ".repositories[0].repositoryUri")
+
+if [ -z "${REPOSITORY}" ]
+then
+    REPOSITORY=$(aws ecr create-repository --repository-name ${IMAGE_NAME} \
+                                           --tags \
+                                           Key=AppId,Value="${APP_ID}" \
+                                           Key=Environment,Value="$(get-build-environment)" \
+                                           Key=AppName,Value="${BITBUCKET_REPO_SLUG}" \
+                                           Key=CostBearer,Value="${COST_BEARER}" \
+                                           Key=CostCenter,Value="${COST_CENTER}" \
+                                           Key=Owner,Value="${OWNER}" \
+                                           Key=Role,Value="${ROLE}" \
+                                           Key=SLA,Value="${SLA}" \
+                                           --output json | jq -r ".repository.repositoryUri")
+    POLICY_FILE=$(mktemp /tmp/ecr-policy.XXXXXX)
+    echo $(interpolate ci/policies/ecr.json) > ${POLICY_FILE}
+
+    aws ecr put-lifecycle-policy --repository-name ${IMAGE_NAME} --lifecycle-policy-text "file://${POLICY_FILE}"
+
+    rm ${POLICY_FILE}
+fi
+
+ECS_CONTAINER_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-cluster-EcsContainerRole'].Value")
+[ $(get-build-environment) = prod ] && APP_ENV=prod || APP_ENV=dev
+CONTAINER_CPU=$(resolve-variable CONTAINER_CPU 100)
+CONTAINER_MEMORY=$(resolve-variable CONTAINER_MEMORY 128)
+
+DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-rds-mysql-DatabaseURI'].Value")
+DB_NAME=$(resolve-variable DB_NAME ${IMAGE_NAME})
+
+assert-variables DB_HOST DB_USER DB_PASSWORD
+
+REDIS_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-redis-ReplicationGroupPrimaryEndPointAddress'].Value")
+REDIS_PORT=$(aws cloudformation list-exports --query "Exports[?Name=='aws-infrastructure-$(get-build-environment)-redis-ReplicationGroupPrimaryEndPointPort'].Value")
+REDIS_DATABASE=$(resolve-variable REDIS_DATABASE 0)
+REDIS_PREFIX=$(resolve-variable REDIS_PREFIX ${IMAGE_NAME}:)
+
+assert-variables REDIS_HOST REDIS_PORT
+
+docker tag ${IMAGE_NAME}:${VERSION} ${REPOSITORY}:${VERSION}
+docker push ${REPOSITORY}:${VERSION}
+aws ecs register-task-definition --cli-input-json $(interpolate ci/task-definitions/link.json | jq -c .) \
+                                 --tags \
+                                 key=AppId,value="${APP_ID}" \
+                                 key=AppName,value="${BITBUCKET_REPO_SLUG}" \
+                                 key=Environment,value="$(get-build-environment)" \
+                                 key=CostBearer,value="${COST_BEARER}" \
+                                 key=CostCenter,value="${COST_CENTER}" \
+                                 key=Owner,value="${OWNER}" \
+                                 key=Role,value="${ROLE}" \
+                                 key=SLA,value="${SLA}" \
+                                 --output json | jq -r ".taskDefinition.taskDefinitionArn" > link.arn
