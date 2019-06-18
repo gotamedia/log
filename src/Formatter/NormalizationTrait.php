@@ -32,24 +32,23 @@ trait NormalizationTrait
             ];
 
             if ($this->includeTrace) {
-                $rows = array_reverse($exception->getTrace());
                 $trace = [];
 
-                foreach ($rows as $row) {
+                foreach ($exception->getTrace() as $row) {
                     unset($row['args']);
 
                     if (!isset($row['file'])) {
-                        $trace[] = $row['class'] . $row['type'] . $row['function'] . '()';
+                        $trace[] = "{$row['class']}{$row['type']}{$row['function']}()";
 
                         continue;
                     }
 
                     $class = $row['class'] ?? '';
                     $type = $row['type'] ?? '';
-                    $trace[] = $row['file'] . ':' . $row['line'] . ' called ' . $class . $type . $row['function'];
+                    $trace[] = "{$row['file']}:{$row['line']} called {$class}{$type}{$row['function']}()";
                 }
 
-                $context['exception']['trace'] = array_reverse($trace);
+                $context['exception']['trace'] = $trace;
             }
         }
 
