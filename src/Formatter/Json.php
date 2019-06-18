@@ -9,6 +9,8 @@ use RuntimeException;
 
 class Json implements FormatterInterface
 {
+    use NormalizationTrait;
+
     /**
      * @todo Add option to enable JSON_PRETTY_PRINT
      * @var int
@@ -24,10 +26,10 @@ class Json implements FormatterInterface
     public function format(RecordInterface $record): string
     {
         $string = json_encode([
-            'message' => $record->getMessage(),
-            'context' => $record->getContext(),
+            'date' => $record->getDateTime()->format('c'),
             'level' => $record->getLevel(),
-            'datetime' => $record->getDateTime()->format('c')
+            'message' => $record->getMessage(),
+            'context' => $this->normalizeContext($record->getContext())
         ], $this->encodingOptions);
 
         if ($string === false) {
