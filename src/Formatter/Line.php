@@ -8,6 +8,8 @@ use Atoms\Log\RecordInterface;
 
 class Line implements FormatterInterface
 {
+    use NormalizationTrait;
+
     /**
      * {@inheritDoc}
      */
@@ -21,7 +23,7 @@ class Line implements FormatterInterface
         );
 
         if (count($record->getContext()) > 0) {
-            $string .= ' ' . print_r($record->getContext(), true);
+            $string .= ' - ' . print_r($this->normalizeContext($record->getContext()), true);
         }
 
         return $string;
