@@ -11,7 +11,7 @@ composer require atoms/log
 
 ## About
 
-- **atoms/log** requires with PHP 7.0
+- **atoms/log** requires PHP 8.0.
 
 ### Author
 
